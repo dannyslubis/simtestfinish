@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Uji Coba Backdoor Quest</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; background-color: #f4f4f9;}
+        .popup-box { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.2); display: inline-block; }
+        input { padding: 10px; font-size: 16px; width: 80%; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 5px; }
+        button { padding: 10px 20px; font-size: 16px; cursor: pointer; background-color: #4CAF50; color: white; border: none; border-radius: 5px; }
+        button:disabled { background-color: #aaa; cursor: not-allowed; }
+        #pesanStatus { margin-top: 15px; font-weight: bold; color: #333; }
+    </style>
+</head>
+<body>
+
+    <div class="popup-box">
+        <h2>Selamat Anda Telah Menyelesaikan Permainan Ini!</h2>
+        <p>Tulis Nama dan Kelasmu di sini:</p>
+        
+        <input type="text" id="inputNama" placeholder="Contoh: Natori X1">
+        
+        <br>
+        
+        <button id="tombolKirim" onclick="kirimDataQuest()">Kirim</button>
+        
+        <p id="pesanStatus"></p>
+    </div>
+
+    <script>
+        // Masukkan URL Google Apps Script Anda di sini
+        const urlGAS = "https://script.google.com/macros/s/AKfycbx3M4bWTquedi0yMwfNCUs3BkbPmh4yWolHZaCH_Cukr_1t2yAafuwUpqNIYq0mOxtp/exec";
+
+        function kirimDataQuest() {
+            const elemenNama = document.getElementById("inputNama");
+            const tombol = document.getElementById("tombolKirim");
+            const status = document.getElementById("pesanStatus");
+            
+            const namaSiswa = elemenNama.value.trim();
+
+            // Cegah pengiriman jika nama kosong
+            if (namaSiswa === "") {
+                alert("Silakan isi nama terlebih dahulu!");
+                return;
+            }
+
+            // 1. Proses Pembuatan Token Rahasia (5 Karakter)
+            const tokenRahasia = Math.random().toString(36).substring(2, 7).toUpperCase().padEnd(5, '0');
+
+            // 2. Proses Pengambilan Waktu (Timestamp)
+            const waktuSekarang = new Date().toLocaleString('id-ID');
+
+            // 3. Membungkus semua data
+            const paketData = {
+                waktu: waktuSekarang,
+                nama: namaSiswa,
+                token: tokenRahasia
+            };
+
+            // Mengubah tampilan saat proses mengirim
+            tombol.innerText = "Mengirim Data...";
+            tombol.disabled = true;
+            elemenNama.disabled = true;
+            status.innerText = "Sistem sedang menghubungi server...";
+
+            // 4. Mengirim data ke Google Sheets via Apps Script secara diam-diam
+            fetch(urlGAS, {
+                method: "POST",
+                // Menggunakan text/plain agar tidak ditolak oleh sistem keamanan browser di GitHub
+                headers: {
+                    "Content-Type": "text/plain;charset=utf-8",
+                },
+                body: JSON.stringify(paketData)
+            })
+            .then(response => {
+                // Jika sukses terkirim
+                status.innerText = "Data berhasil dikirim! Silakan lanjutkan eksplorasi stoikiometri Anda.";
+                status.style.color = "green";
+                tombol.innerText = "Selesai";
+                
+                // Di tahap pengembangan game nanti, di sinilah Anda menaruh kode untuk
+                // menutup pop-up dan melanjutkan permainan.
+            })
+            .catch(error => {
+                // Jika internet putus atau gagal
+                status.innerText = "Gagal mengirim data. Periksa koneksi internet.";
+                status.style.color = "red";
+                tombol.innerText = "Coba Lagi";
+                tombol.disabled = false;
+                elemenNama.disabled = false;
+            });
+        }
+    </script>
+
+</body>
+</html>

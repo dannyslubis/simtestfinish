@@ -3,93 +3,181 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Uji Coba Backdoor Quest</title>
+    <title>Simulasi Stoikiometri</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; background-color: #f4f4f9;}
-        .popup-box { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.2); display: inline-block; }
-        input { padding: 10px; font-size: 16px; width: 80%; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 5px; }
-        button { padding: 10px 20px; font-size: 16px; cursor: pointer; background-color: #4CAF50; color: white; border: none; border-radius: 5px; }
-        button:disabled { background-color: #aaa; cursor: not-allowed; }
-        #pesanStatus { margin-top: 15px; font-weight: bold; color: #333; }
+        /* Mengatur ruang kosong di luar kanvas menjadi hitam pekat */
+        body { 
+            background-color: #000000; 
+            margin: 0; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+        }
+
+        /* Wadah utama game, ukurannya dikunci di 512x288 */
+        .game-container { 
+            position: relative; 
+            width: 512px; 
+            height: 288px; 
+            background-color: #87CEEB; /* Warna sementara langit game */
+            overflow: hidden;
+            image-rendering: pixelated; /* Mempertahankan gaya pixel art */
+        }
+
+        /* Layar gelap saat pop-up muncul. Transisi dipercepat menjadi 0.1s */
+        .overlay-gelap {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            z-index: 10;
+            transition: opacity 0.1s ease-out;
+            opacity: 0;
+        }
+
+        /* Gambar Pop-up Token (popuptoken.png) */
+        #gambarPopup {
+            position: absolute;
+            top: 0; left: 0; width: 512px; height: 288px;
+            display: none;
+            z-index: 11;
+        }
+
+        /* Koordinat F5 - K5 untuk Input Nama 
+           (X: 160px, Y: 128px, Lebar: 192px, Tinggi: 32px)
+        */
+        #inputNamaSiswa {
+            position: absolute;
+            left: 160px; 
+            top: 128px; 
+            width: 192px; 
+            height: 32px;
+            z-index: 12;
+            display: none;
+            
+            /* Styling Teks sesuai permintaan */
+            font-family: 'VT323', monospace;
+            font-size: 24px;
+            color: #000000;
+            text-align: center;
+            
+            /* Menghilangkan background agar menyatu dengan gambar pop-up Anda */
+            background: transparent;
+            border: none;
+            outline: none;
+        }
+
+        /* Tombol pemicu sementara untuk tes */
+        .tombol-tes { position: absolute; top: 10px; left: 10px; z-index: 5; }
     </style>
 </head>
 <body>
 
-    <div class="popup-box">
-        <h2>Selamat Anda Telah Menyelesaikan Permainan Ini!</h2>
-        <p>Tulis Nama dan Kelasmu di sini:</p>
+    <div class="game-container" id="areaGame">
+        <button class="tombol-tes" onclick="tampilkanPopup()">Simulasi: Selesaikan Quest 7</button>
+
+        <div class="overlay-gelap" id="layarGelap"></div>
+        <img src="popuptoken.png" id="gambarPopup" alt="Popup Selesai">
         
-        <input type="text" id="inputNama" placeholder="Contoh: Natori X1">
-        
-        <br>
-        
-        <button id="tombolKirim" onclick="kirimDataQuest()">Kirim</button>
-        
-        <p id="pesanStatus"></p>
+        <input type="text" id="inputNamaSiswa" placeholder="Ketik namamu..." autocomplete="off">
     </div>
 
     <script>
-        // Masukkan URL Google Apps Script Anda di sini
         const urlGAS = "https://script.google.com/macros/s/AKfycbx3M4bWTquedi0yMwfNCUs3BkbPmh4yWolHZaCH_Cukr_1t2yAafuwUpqNIYq0mOxtp/exec";
+        
+        const areaGame = document.getElementById('areaGame');
+        const layarGelap = document.getElementById('layarGelap');
+        const gambarPopup = document.getElementById('gambarPopup');
+        const inputNama = document.getElementById('inputNamaSiswa');
+        let popupAktif = false;
 
-        function kirimDataQuest() {
-            const elemenNama = document.getElementById("inputNama");
-            const tombol = document.getElementById("tombolKirim");
-            const status = document.getElementById("pesanStatus");
+        // Fungsi memunculkan pop-up saat quest selesai
+        function tampilkanPopup() {
+            layarGelap.style.display = 'block';
+            gambarPopup.style.display = 'block';
+            inputNama.style.display = 'block';
             
-            const namaSiswa = elemenNama.value.trim();
+            // Efek pemudaran cepat
+            setTimeout(() => { layarGelap.style.opacity = '1'; }, 10);
+            
+            inputNama.focus(); // Langsung arahkan kursor ke tempat ketik
+            popupAktif = true;
+        }
 
-            // Cegah pengiriman jika nama kosong
-            if (namaSiswa === "") {
-                alert("Silakan isi nama terlebih dahulu!");
+        // Mendeteksi klik di dalam area game
+        areaGame.addEventListener('click', function(event) {
+            if (!popupAktif) return;
+
+            // Mengambil koordinat klik mouse relatif terhadap pojok kiri atas game
+            const rect = areaGame.getBoundingClientRect();
+            const klikX = event.clientX - rect.left;
+            const klikY = event.clientY - rect.top;
+
+            /* Mendeteksi Koordinat Tombol Kirim: F6 - K6 
+               Kolom F (X mulai 160) sampai ujung Kolom K (X berakhir 352)
+               Baris 6 (Y mulai 160) sampai ujung Baris 6 (Y berakhir 192)
+            */
+            if (klikX >= 160 && klikX <= 352 && klikY >= 160 && klikY <= 192) {
+                prosesKirimData();
+            }
+        });
+
+        function prosesKirimData() {
+            const nama = inputNama.value.trim();
+            
+            if (nama === "") {
+                // Opsional: ganti placeholder jika kosong
+                inputNama.placeholder = "Nama harus diisi!";
                 return;
             }
 
-            // 1. Proses Pembuatan Token Rahasia (5 Karakter)
-            const tokenRahasia = Math.random().toString(36).substring(2, 7).toUpperCase().padEnd(5, '0');
+            // Ubah teks saat mengirim agar ada indikasi visual bagi pemain
+            inputNama.value = "Mengirim...";
+            inputNama.disabled = true;
 
-            // 2. Proses Pengambilan Waktu (Timestamp)
+            const tokenRahasia = Math.random().toString(36).substring(2, 7).toUpperCase().padEnd(5, '0');
             const waktuSekarang = new Date().toLocaleString('id-ID');
 
-            // 3. Membungkus semua data
             const paketData = {
                 waktu: waktuSekarang,
-                nama: namaSiswa,
+                nama: nama,
                 token: tokenRahasia
             };
 
-            // Mengubah tampilan saat proses mengirim
-            tombol.innerText = "Mengirim Data...";
-            tombol.disabled = true;
-            elemenNama.disabled = true;
-            status.innerText = "Sistem sedang menghubungi server...";
-
-            // 4. Mengirim data ke Google Sheets via Apps Script secara diam-diam
             fetch(urlGAS, {
                 method: "POST",
-                // Menggunakan text/plain agar tidak ditolak oleh sistem keamanan browser di GitHub
-                headers: {
-                    "Content-Type": "text/plain;charset=utf-8",
-                },
+                headers: { "Content-Type": "text/plain;charset=utf-8" },
                 body: JSON.stringify(paketData)
             })
             .then(response => {
-                // Jika sukses terkirim
-                status.innerText = "Data berhasil dikirim! Silakan lanjutkan eksplorasi stoikiometri Anda.";
-                status.style.color = "green";
-                tombol.innerText = "Selesai";
-                
-                // Di tahap pengembangan game nanti, di sinilah Anda menaruh kode untuk
-                // menutup pop-up dan melanjutkan permainan.
+                tutupPopup();
+                // Di sini Anda bisa menambahkan kode lanjutan, 
+                // misalnya Kurori memberikan selamat atau lanjut ke layar penutup.
             })
             .catch(error => {
-                // Jika internet putus atau gagal
-                status.innerText = "Gagal mengirim data. Periksa koneksi internet.";
-                status.style.color = "red";
-                tombol.innerText = "Coba Lagi";
-                tombol.disabled = false;
-                elemenNama.disabled = false;
+                inputNama.value = "";
+                inputNama.placeholder = "Gagal. Coba lagi!";
+                inputNama.disabled = false;
             });
+        }
+
+        // Fungsi untuk menutup pop-up dan lanjut bermain
+        function tutupPopup() {
+            layarGelap.style.opacity = '0';
+            setTimeout(() => {
+                layarGelap.style.display = 'none';
+                gambarPopup.style.display = 'none';
+                inputNama.style.display = 'none';
+                popupAktif = false;
+                
+                // Reset input untuk keamanan
+                inputNama.value = "";
+                inputNama.disabled = false;
+            }, 100); // Sinkron dengan durasi transisi CSS
         }
     </script>
 
